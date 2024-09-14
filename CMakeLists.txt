@@ -12,7 +12,7 @@ set(BUILD_SHARED_LIBRARY ON)
 set(REDIRECT_SERIAL_OUT_TO_STD_OUT OFF)
 
 DeclareAndFetch(teensy_x86_stubs            https://github.com/newdigate/teensy-x86-stubs.git feature/shared_serial src)
-DeclareAndFetch(teensy_gfx                  https://github.com/newdigate/teensy-gfx.git main src)
+DeclareAndFetch(teensy_gfx                  https://github.com/newdigate/teensy-gfx.git noinstall src)
 DeclareAndFetch(teensy_x86_encoder_stubs    https://github.com/newdigate/teensy-x86-encoder-stubs.git noinstall src)
 DeclareAndFetch(teensy_x86_bounce2_stubs    https://github.com/newdigate/teensy-x86-bounce2-stubs.git noinstall src)
 DeclareAndFetch(teensy_gfx_controls         https://github.com/newdigate/teensy-gfx-controls.git noinstall src)
