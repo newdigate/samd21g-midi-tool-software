@@ -21,7 +21,8 @@ DeclareAndFetch(teensy_st7735_linux_stubs   https://github.com/newdigate/teensy-
 
 include("${FETCHCONTENT_BASE_DIR}/teensy_st7735_linux_stubs-src/extras/opengl/opengl.cmake.in")
 
-add_executable(MyExample main.cpp)
+add_executable(MyExample main.cpp icons.cpp MainMenu.cpp)
+
 target_link_libraries(MyExample teensy_x86_stubs teensy_gfx teensy_gfx_controls teensy_x86_bounce2_stubs teensy_st7735_linux_stubs)
 target_link_libraries(MyExample ${teensy_st7735_linux_extras_opengl_LIBS})
 target_link_libraries(MyExample ${LIBS})
