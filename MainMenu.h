@@ -58,6 +58,7 @@ public:
         auto *sketchMenuItem = new TeensyStringMenuItem(mainMenu, sketchName, std::bind(&MainScene::MenuItemClicked, this, sketchDescriptions.size(), std::placeholders::_1) ) ;
         sketchDescriptions.push_back(sketchDescription);
         mainMenu.AddControl(sketchMenuItem);
+        sketchControls.push_back(sketchControl);
     }
     void MenuItemClicked(const int menuItemIndex, const int buttonIndex) const {
         Serial.println("MenuItemClicked!!!!!");
