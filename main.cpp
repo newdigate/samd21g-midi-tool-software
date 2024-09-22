@@ -1,12 +1,8 @@
-#ifndef BUILD_FOR_LINUX
-#include <Adafruit_ST7735.h>
-#include "st7735view.h"
-#endif
-#include "View.h"
-#include "teensy_controls.h"
+#include <Arduino.h>
 #include <Bounce2.h>
 #include <Encoder.h>
-
+#include "View.h"
+#include "teensy_controls.h"
 #include "scenecontroller.h"
 #include "icons.h"
 #include "rgb565_colors.h"
@@ -24,6 +20,8 @@ Encoder encoderUpDown(4, 15);
 st7735_opengl<Encoder,Button> tft = st7735_opengl(false, 0, &encoderUpDown, &encoderLeftRight, &button, &button2, &button3);
 VirtualView mainView(tft, 0,0, 128, 128);
 #else
+#include <Adafruit_ST7735.h>
+#include "st7735view.h"
 #define TFT_CS          6
 #define TFT_RST         1   // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC          2
