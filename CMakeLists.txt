@@ -36,4 +36,5 @@ target_link_libraries(MyExample teensy_x86_stubs teensy_gfx teensy_gfx_controls 
 if (BUILD_FOR_LINUX)
     target_link_libraries(MyExample ${teensy_st7735_linux_extras_opengl_LIBS})
     target_link_libraries(MyExample ${LIBS})
+    target_link_libraries(MyExample rtmidi)
 endif()
