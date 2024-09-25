@@ -74,8 +74,6 @@ private:
     std::vector<String> sketchDescriptions;
 
     SceneController<VirtualView, Encoder, Bounce2::Button> &_controller;
-
-
 };
 
 #endif //MAINMENU_H

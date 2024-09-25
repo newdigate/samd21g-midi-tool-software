@@ -8,6 +8,17 @@
 #include "rgb565_colors.h"
 #include "MainMenu.h"
 
+#include <MIDI.h>
+
+#include "MidiSpyScene.h"
+#ifdef BUILD_FOR_LINUX
+#include "RtMidiMIDI.h"
+#include "RtMidiTransport.h"
+MIDI_CREATE_RTMIDI_INSTANCE(RtMidiMIDI, rtMIDI,  MIDI);
+#else
+MIDI_CREATE_DEFAULT_INSTANCE();
+#endif
+
 using namespace Bounce2;
 Button button = Button();
 Button button2 = Button();
@@ -30,9 +41,12 @@ SceneController<Adafruit_ST7735,Encoder,Button> controller(tft, encoderUpDown, e
 ST7735 mainView(tft);
 #endif
 
+
+
 SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, button2,button3);
 
-TeensyControl midiSpy(mainView, [] (){}, 128, 128, 0, 0);
+MidiSpyScene midiSpyScene(mainView);
+TeensyControl midiSpy(mainView, [] (){ midiSpy.fillScreen(RGB565_African_violet); }, 128, 128, 0, 0);
 
 MainScene mainMenu = MainScene(mainView, controller);
 
