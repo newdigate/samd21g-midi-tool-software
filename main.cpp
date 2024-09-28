@@ -15,6 +15,7 @@
 #include "RtMidiMIDI.h"
 #include "RtMidiTransport.h"
 MIDI_CREATE_RTMIDI_INSTANCE(RtMidiMIDI, rtMIDI,  MIDI);
+using TMidi = RtMidiMIDI;
 #else
 MIDI_CREATE_DEFAULT_INSTANCE();
 #endif
@@ -43,7 +44,7 @@ ST7735 mainView(tft);
 
 
 
-SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, button2,button3);
+SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 
 MidiSpyScene midiSpyScene(mainView);
 TeensyControl midiSpy(mainView, [] (){ midiSpy.fillScreen(RGB565_African_violet); }, 128, 128, 0, 0);
@@ -68,20 +69,6 @@ const String menuLabels[numMenuItems] = {
     "Spy",
     "Sleep"};
 
-void handleNoteOn(byte channel, byte pitch, byte velocity)
-{
-    // Do whatever you want when a note is pressed.
-    // Try to keep your callbacks short (no delays ect)
-    // otherwise it would slow down the loop() and have a bad impact
-    // on real-time performance.
-    Serial.printf("Its alive...ch:%d pitch:%d vel:%d\n", channel, pitch, velocity);
-}
-
-void handleNoteOff(byte channel, byte pitch, byte velocity)
-{
-    // Do something when the note is released.
-    // Note that NoteOn messages with 0 velocity are interpreted as NoteOffs.
-}
 
 void sendMessage(byte channel, midi::MidiType type, byte data1, byte data2){
     midi::Message<128U> m;
@@ -130,10 +117,6 @@ void setup() {
     mainMenu.AddSketch(menuLabels[6], menuDescriptions[6], &midiSpy);
     // Connect the handleNoteOn function to the library,
     // so it is called upon reception of a NoteOn.
-    MIDI.setHandleNoteOn(handleNoteOn);  // Put only the name of the function
-
-    // Do the same for NoteOffs
-    MIDI.setHandleNoteOff(handleNoteOff);
 
     // Initiate MIDI communications, listen to all channels
     MIDI.begin(MIDI_CHANNEL_OMNI);
@@ -141,6 +124,7 @@ void setup() {
 
 void loop() {
     controller.Process();
+    MIDI.read();
 }
 
 int st7735_main(int, char**) {
