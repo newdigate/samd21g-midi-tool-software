@@ -15,8 +15,8 @@ class MidiSpyScene : public BaseScene {
 public:
     MidiSpyScene(View &mainView) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on, _bmp_settings_off, 16, 16),
         mainView(mainView),
-        _milliseconds(0),
-        _lastMilliseconds(0)
+        _microseconds(0),
+        _lastMicroseconds(0)
     {
     }
 
@@ -25,17 +25,30 @@ public:
     }
 
     void Update () override {
+        unsigned long currentMicros = micros();
+        if (currentMicros >= _lastMicroseconds && currentMicros - _lastMicroseconds > _microsPerTick) {
+            _currentTicks +=  (currentMicros - _lastMicroseconds) / _microsPerTick;
+            _lastMicroseconds = currentMicros;
+        } else {
+            // overflow
+        }
+        _microseconds = currentMicros;
     }
 
     void InitScreen () override {
-        _milliseconds = millis();
-        mainView.fillScreen(RGB565_Blue);
+        _microseconds = micros();
+        _lastMicroseconds = _microseconds;
+        _currentTicks = 0;
+        _lastEventTicks = 0;
+        _microsPerTick = get_microseconds_per_tick(120.0);
+        mainView.fillScreen(RGB565_Black);
         mainView.setTextWrap(true);
         mainView.drawString("Recording",0,64);
-        writer.setFilename("test.mid");
+        writer.setFilename("test");
         writer.writeHeader();
     }
-    void UninitScreen () override {}
+    void UninitScreen () override {
+    }
 
     void ButtonPressed(unsigned buttonIndex) override {
     }
@@ -43,11 +56,15 @@ public:
     }
     void Rotary2Changed(bool forward) override {}
     void NoteOn(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
-        writer.addNoteOnEvent(0, channel, pitch, velocity);
+        auto deltaTicks = _currentTicks - _lastEventTicks;
+        _lastEventTicks = _currentTicks;
+        writer.addNoteOnEvent(deltaTicks, channel, pitch, velocity);
         writer.flush();
     }
     void NoteOff(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
-        writer.addNoteOffEvent(0, channel, pitch);
+        auto deltaTicks = _currentTicks - _lastEventTicks;
+        _lastEventTicks = _currentTicks;
+        writer.addNoteOffEvent(deltaTicks, channel, pitch);
         writer.flush();
     }
     void ControlChange(uint8_t channel, uint8_t data1, uint8_t data2) override {
@@ -63,8 +80,9 @@ public:
 
 private:
     View &mainView;
-    unsigned long long _milliseconds, _lastMilliseconds;
+    unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
+    uint32_t _ticks;
 };
 
 

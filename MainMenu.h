@@ -55,23 +55,26 @@ public:
     }
     void Rotary2Changed(bool forward) override {}
 
-    void AddSketch(const String &sketchName, const String &sketchDescription, TeensyControl* sketchControl) {
-        auto *sketchMenuItem = new TeensyStringMenuItem(mainMenu, sketchName, std::bind(&MainScene::MenuItemClicked, this, sketchDescriptions.size(), std::placeholders::_1) ) ;
+    void AddSketch(const String &sketchName, const String &sketchDescription, unsigned int sceneNumber) {
+        auto *sketchMenuItem = new TeensyStringMenuItem(mainMenu, sketchName,
+            [&,sceneNumber](uint8_t) {
+                _controller.SetCurrentSceneIndex(sceneNumber);
+            });
         sketchDescriptions.push_back(sketchDescription);
         mainMenu.AddControl(sketchMenuItem);
-        sketchControls.push_back(sketchControl);
+        sketchSceneNumbers.push_back(sceneNumber);
     }
     void MenuItemClicked(const int menuItemIndex, const int buttonIndex) const {
         Serial.println("MenuItemClicked!!!!!");
-        if (buttonIndex == 1 && menuItemIndex <= sketchControls.size()) {
-            _controller.AddDialog(sketchControls[menuItemIndex]);
+        if (buttonIndex == 0 && menuItemIndex <= sketchSceneNumbers.size()) {
+            _controller.SetCurrentSceneIndex(sketchSceneNumbers[menuItemIndex]);
         }
     }
 private:
     TeensyMenu mainMenu;
     View &mainView;
 
-    std::vector<TeensyControl*> sketchControls;
+    std::vector<unsigned int> sketchSceneNumbers;
     std::vector<String> sketchDescriptions;
 
     SceneController<VirtualView, Encoder, Bounce2::Button, TMidi> &_controller;

@@ -105,16 +105,17 @@ void setup() {
     tft.fillScreen(RGB565_Black);
 
     controller.AddScene(&mainMenu);
+    controller.AddScene(&midiSpyScene);
     controller.SetCurrentSceneIndex(0);
     controller.SetActive(false);
 
-    mainMenu.AddSketch(menuLabels[0], menuDescriptions[0], &midiSpy);
-    mainMenu.AddSketch(menuLabels[1], menuDescriptions[1], &midiSpy);
-    mainMenu.AddSketch(menuLabels[2], menuDescriptions[2], &midiSpy);
-    mainMenu.AddSketch(menuLabels[3], menuDescriptions[3], &midiSpy);
-    mainMenu.AddSketch(menuLabels[4], menuDescriptions[4], &midiSpy);
-    mainMenu.AddSketch(menuLabels[5], menuDescriptions[5], &midiSpy);
-    mainMenu.AddSketch(menuLabels[6], menuDescriptions[6], &midiSpy);
+    mainMenu.AddSketch(menuLabels[0], menuDescriptions[0], 1);
+    mainMenu.AddSketch(menuLabels[1], menuDescriptions[1], 1);
+    mainMenu.AddSketch(menuLabels[2], menuDescriptions[2], 1);
+    mainMenu.AddSketch(menuLabels[3], menuDescriptions[3], 1);
+    mainMenu.AddSketch(menuLabels[4], menuDescriptions[4], 1);
+    mainMenu.AddSketch(menuLabels[5], menuDescriptions[5], 1);
+    mainMenu.AddSketch(menuLabels[6], menuDescriptions[6], 1);
     // Connect the handleNoteOn function to the library,
     // so it is called upon reception of a NoteOn.
 
@@ -128,5 +129,6 @@ void loop() {
 }
 
 int st7735_main(int, char**) {
+    SD.setSDCardFolderPath("/Users/moolet/Development/github/samd21g-midi-tool-software/resources/sd");
     return 0;
 }
