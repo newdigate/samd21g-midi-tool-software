@@ -4,7 +4,6 @@
 #include "View.h"
 #include "teensy_controls.h"
 #include "scenecontroller.h"
-#include "icons.h"
 #include "rgb565_colors.h"
 #include "MainMenu.h"
 
@@ -15,8 +14,11 @@
 #include "RtMidiMIDI.h"
 #include "RtMidiTransport.h"
 MIDI_CREATE_RTMIDI_INSTANCE(RtMidiMIDI, rtMIDI,  MIDI);
-using TMidi = RtMidiMIDI;
+using TMidiTransport = RtMidiTransport<RtMidiMIDI>;
+using TMidi = midi::MidiInterface<TMidiTransport>;
 #else
+using TMidiTransport = arduino::HardwareSerial;
+using TMidi = midi::SerialMIDI<TMidiTransport>;
 MIDI_CREATE_DEFAULT_INSTANCE();
 #endif
 
@@ -31,6 +33,7 @@ Encoder encoderUpDown(4, 15);
 #include "st7735_opengl_main.h"
 st7735_opengl<Encoder,Button> tft = st7735_opengl(false, 0, &encoderUpDown, &encoderLeftRight, &button, &button2, &button3);
 VirtualView mainView(tft, 0,0, 128, 128);
+SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #else
 #include <Adafruit_ST7735.h>
 #include "st7735view.h"
@@ -38,18 +41,15 @@ VirtualView mainView(tft, 0,0, 128, 128);
 #define TFT_RST         1   // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC          2
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-SceneController<Adafruit_ST7735,Encoder,Button> controller(tft, encoderUpDown, encoderLeftRight, button, button2,button3);
 ST7735 mainView(tft);
+VirtualView virtualView(mainView, 0, 0, 128, 128);
+SceneController<VirtualView,Encoder,Button, TMidi> controller(virtualView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #endif
-
-
-
-SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 
 MidiSpyScene midiSpyScene(mainView);
 TeensyControl midiSpy(mainView, [] (){ midiSpy.fillScreen(RGB565_African_violet); }, 128, 128, 0, 0);
 
-MainScene mainMenu = MainScene(mainView, controller);
+MainScene<TMidiTransport> mainMenu = MainScene(mainView, controller);
 
 const char* menuDescriptions[numMenuItems] = {
     "Change device settings",
@@ -80,10 +80,24 @@ void sendMessage(byte channel, midi::MidiType type, byte data1, byte data2){
     m.length = 3;
     MIDI.send(m);
 }
+#ifdef BUILD_FOR_LINUX
+#define SDCARD_SS_PIN 0
+#endif
+
+const int chipSelect = SDCARD_SS_PIN;
 
 void setup() {
 
     Serial.begin(9600);
+
+    if (!SD.begin(chipSelect)) {
+      Serial.println("initialization failed. Things to check:");
+      Serial.println("1. is a card inserted?");
+      Serial.println("2. is your wiring correct?");
+      Serial.println("3. did you change the chipSelect pin to match your shield or module?");
+      Serial.println("Note: press reset button on the board and reopen this Serial Monitor after fixing your issue!");
+      while (true);
+    }
 
     button.attach( 3, INPUT_PULLUP ); // USE EXTERNAL PULL-UP
     button2.attach( 16, INPUT_PULLUP ); // USE EXTERNAL PULL-UP
@@ -127,8 +141,9 @@ void loop() {
     controller.Process();
     MIDI.read();
 }
-
+#ifdef BUILD_FOR_LINUX
 int st7735_main(int, char**) {
     SD.setSDCardFolderPath("/Users/moolet/Development/github/samd21g-midi-tool-software/resources/sd");
     return 0;
 }
+#endif
