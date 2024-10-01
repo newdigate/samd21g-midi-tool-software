@@ -6,19 +6,19 @@
 #include "scenecontroller.h"
 #include "rgb565_colors.h"
 #include "MainMenu.h"
-
 #include <MIDI.h>
 
 #include "MidiSpyScene.h"
 #ifdef BUILD_FOR_LINUX
+#define SDCARD_SS_PIN 0
 #include "RtMidiMIDI.h"
 #include "RtMidiTransport.h"
 MIDI_CREATE_RTMIDI_INSTANCE(RtMidiMIDI, rtMIDI,  MIDI);
 using TMidiTransport = RtMidiTransport<RtMidiMIDI>;
 using TMidi = midi::MidiInterface<TMidiTransport>;
 #else
-using TMidiTransport = arduino::HardwareSerial;
-using TMidi = midi::SerialMIDI<TMidiTransport>;
+using TMidiTransport = midi::SerialMIDI<arduino::HardwareSerial>;
+using TMidi = midi::MidiInterface<TMidiTransport>;
 MIDI_CREATE_DEFAULT_INSTANCE();
 #endif
 
@@ -43,13 +43,12 @@ SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, bu
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 ST7735 mainView(tft);
 VirtualView virtualView(mainView, 0, 0, 128, 128);
-SceneController<VirtualView,Encoder,Button, TMidi> controller(virtualView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
+SceneController<VirtualView,Encoder,Button, TMidiTransport> controller(virtualView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #endif
 
-MidiSpyScene midiSpyScene(mainView);
-TeensyControl midiSpy(mainView, [] (){ midiSpy.fillScreen(RGB565_African_violet); }, 128, 128, 0, 0);
+MidiSpyScene midiSpyScene(mainView, SDCARD_SS_PIN);
 
-MainScene<TMidiTransport> mainMenu = MainScene(mainView, controller);
+MainScene<TMidiTransport> mainMenu = MainScene<TMidiTransport>(mainView, controller);
 
 const char* menuDescriptions[numMenuItems] = {
     "Change device settings",
@@ -80,9 +79,7 @@ void sendMessage(byte channel, midi::MidiType type, byte data1, byte data2){
     m.length = 3;
     MIDI.send(m);
 }
-#ifdef BUILD_FOR_LINUX
-#define SDCARD_SS_PIN 0
-#endif
+
 
 const int chipSelect = SDCARD_SS_PIN;
 

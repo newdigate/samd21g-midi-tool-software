@@ -13,10 +13,11 @@
 
 class MidiSpyScene : public BaseScene {
 public:
-    MidiSpyScene(View &mainView) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on, _bmp_settings_off, 16, 16),
+    MidiSpyScene(View &mainView, int sdChipSelect) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on, _bmp_settings_off, 16, 16),
         mainView(mainView),
         _microseconds(0),
-        _lastMicroseconds(0)
+        _lastMicroseconds(0),
+        _sdChipSelect(sdChipSelect)
     {
     }
 
@@ -25,14 +26,27 @@ public:
     }
 
     void Update () override {
-        unsigned long currentMicros = micros();
-        if (currentMicros >= _lastMicroseconds && currentMicros - _lastMicroseconds > _microsPerTick) {
-            _currentTicks +=  (currentMicros - _lastMicroseconds) / _microsPerTick;
-            _lastMicroseconds = currentMicros;
+        if (_sdConnected) {
+            unsigned long currentMicros = micros();
+            if (currentMicros >= _lastMicroseconds && currentMicros - _lastMicroseconds > _microsPerTick) {
+                _currentTicks +=  (currentMicros - _lastMicroseconds) / _microsPerTick;
+                _lastMicroseconds = currentMicros;
+            } else {
+                // overflow
+            }
+            _microseconds = currentMicros;
         } else {
-            // overflow
+            int sdConnected = SD.begin(_sdChipSelect);
+            if (sdConnected != _sdConnected) {
+                _sdConnected = sdConnected;
+                if (_sdConnected)
+                   fillScreen(RGB565_Black);
+                else {
+                    fillScreen(RGB565_Red);
+                    drawString("uSD card not connected", 1, 1);
+                }
+            }
         }
-        _microseconds = currentMicros;
     }
 
     void InitScreen () override {
@@ -46,6 +60,10 @@ public:
         mainView.drawString("Recording",0,64);
         writer.setFilename("test");
         writer.writeHeader();
+        _sdConnected = SD.begin(_sdChipSelect);
+        if (!_sdConnected) {
+            drawString("uSD card not connected", 1, 1);
+        }
     }
     void UninitScreen () override {
     }
@@ -83,6 +101,8 @@ private:
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     uint32_t _ticks;
+    bool _sdConnected = false;
+    int _sdChipSelect;
 };
 
 
