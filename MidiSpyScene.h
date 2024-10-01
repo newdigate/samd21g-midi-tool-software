@@ -35,6 +35,15 @@ public:
                 // overflow
             }
             _microseconds = currentMicros;
+            bool writerError = writer.isError();
+            int errorNumber = writerError? writer.getErrorNumber() : 0;
+            if (writerError != _hasError || errorNumber != _lastErrorNumber) {
+                _hasError = writerError;
+                _lastErrorNumber = errorNumber;
+                fillScreen(RGB565_Red);
+                drawString("write error", 1, 1);
+                drawNumber(_lastErrorNumber, 1, 11);
+            }
         } else {
             int sdConnected = SD.begin(_sdChipSelect);
             if (sdConnected != _sdConnected) {
@@ -101,8 +110,8 @@ private:
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     uint32_t _ticks;
-    bool _sdConnected = false;
-    int _sdChipSelect;
+    bool _sdConnected = false, _hasError = false;
+    int _sdChipSelect, _lastErrorNumber = 0;
 };
 
 

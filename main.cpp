@@ -79,7 +79,9 @@ void sendMessage(byte channel, midi::MidiType type, byte data1, byte data2){
     m.length = 3;
     MIDI.send(m);
 }
-
+#ifdef BUILD_FOR_LINUX
+#define SDCARD_SS_PIN 0
+#endif
 
 const int chipSelect = SDCARD_SS_PIN;
 
