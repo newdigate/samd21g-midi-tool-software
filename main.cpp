@@ -7,7 +7,6 @@
 #include "rgb565_colors.h"
 #include "MainMenu.h"
 #include <MIDI.h>
-
 #include "MidiSpyScene.h"
 #ifdef BUILD_FOR_LINUX
 #define SDCARD_SS_PIN 0

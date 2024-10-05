@@ -64,14 +64,16 @@ public:
         _currentTicks = 0;
         _lastEventTicks = 0;
         _microsPerTick = get_microseconds_per_tick(120.0);
-        mainView.fillScreen(RGB565_Black);
-        mainView.setTextWrap(true);
-        mainView.drawString("Recording",0,64);
-        writer.setFilename("test");
-        writer.writeHeader();
         _sdConnected = SD.begin(_sdChipSelect);
         if (!_sdConnected) {
             drawString("uSD card not connected", 1, 1);
+        } else {
+            mainView.fillScreen(RGB565_Black);
+            mainView.setTextWrap(true);
+            mainView.drawString("Recording",0,64);
+            writer.setFilename("test");
+            writer.writeHeader();
+            mainView.drawString(writer.getFilename(),0,74);
         }
     }
     void UninitScreen () override {
