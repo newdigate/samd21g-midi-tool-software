@@ -27,22 +27,26 @@ public:
 
     void Update () override {
         if (_sdConnected) {
-            unsigned long currentMicros = micros();
-            if (currentMicros >= _lastMicroseconds && currentMicros - _lastMicroseconds > _microsPerTick) {
-                _currentTicks +=  (currentMicros - _lastMicroseconds) / _microsPerTick;
-                _lastMicroseconds = currentMicros;
-            } else {
-                // overflow
-            }
-            _microseconds = currentMicros;
-            bool writerError = writer.isError();
-            int errorNumber = writerError? writer.getErrorNumber() : 0;
-            if (writerError != _hasError || errorNumber != _lastErrorNumber) {
-                _hasError = writerError;
-                _lastErrorNumber = errorNumber;
-                fillScreen(RGB565_Red);
-                drawString("write error", 1, 1);
-                drawNumber(_lastErrorNumber, 1, 11);
+            if (_isRecording) {
+                unsigned long currentMicros = micros();
+                if (_lastMicroseconds == 0)
+                    _lastMicroseconds = currentMicros;
+                else if (currentMicros - _lastMicroseconds > _microsPerTick) {
+                    _currentTicks += (currentMicros - _lastMicroseconds) / _microsPerTick;
+                    _lastMicroseconds = currentMicros;
+                    //Serial.printf("ticks %d", _currentTicks);
+                }
+
+                _microseconds = currentMicros;
+                bool writerError = writer.isError();
+                int errorNumber = writerError ? writer.getErrorNumber() : 0;
+                if (writerError != _hasError || errorNumber != _lastErrorNumber) {
+                    _hasError = writerError;
+                    _lastErrorNumber = errorNumber;
+                    fillScreen(RGB565_Red);
+                    drawString("write error", 1, 1);
+                    drawNumber(_lastErrorNumber, 1, 11);
+                }
             }
         } else {
             int sdConnected = SD.begin(_sdChipSelect);
@@ -60,7 +64,7 @@ public:
 
     void InitScreen () override {
         _microseconds = micros();
-        _lastMicroseconds = _microseconds;
+        _lastMicroseconds = 0;
         _currentTicks = 0;
         _lastEventTicks = 0;
         _microsPerTick = get_microseconds_per_tick(120.0);
@@ -70,16 +74,17 @@ public:
         } else {
             mainView.fillScreen(RGB565_Black);
             mainView.setTextWrap(true);
-            mainView.drawString("Recording",0,64);
-            writer.setFilename("test");
-            writer.writeHeader();
-            mainView.drawString(writer.getFilename(),0,74);
+            mainView.drawString("Ready", 0, 64);
         }
     }
     void UninitScreen () override {
     }
 
     void ButtonPressed(unsigned buttonIndex) override {
+        if (!_isRecording)
+            StartRecording();
+        else
+            StopRecording();
     }
     void Rotary1Changed(bool forward) override {
     }
@@ -88,17 +93,16 @@ public:
         auto deltaTicks = _currentTicks - _lastEventTicks;
         _lastEventTicks = _currentTicks;
         writer.addNoteOnEvent(deltaTicks, channel, pitch, velocity);
-        writer.flush();
     }
     void NoteOff(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         auto deltaTicks = _currentTicks - _lastEventTicks;
         _lastEventTicks = _currentTicks;
         writer.addNoteOffEvent(deltaTicks, channel, pitch);
-        writer.flush();
     }
     void ControlChange(uint8_t channel, uint8_t data1, uint8_t data2) override {
-        writer.addControlChange(480, data1, data2, channel);
-        writer.flush();
+        auto deltaTicks = _currentTicks - _lastEventTicks;
+        _lastEventTicks = _currentTicks;
+        writer.addControlChange(deltaTicks, data1, data2, channel);
     }
 
     unsigned int get_microseconds_per_tick(double beats_per_minute) {
@@ -107,12 +111,33 @@ public:
         return micros_per_tick;
     }
 
+    void StartRecording() {
+        _isRecording = true;
+        mainView.fillScreen(RGB565_Black);
+        mainView.setTextWrap(true);
+        mainView.drawString("Recording",0,64);
+        writer.setFilename("test");
+        writer.writeHeader();
+        mainView.drawString(writer.getFilename(),0,74);
+        _microseconds = micros();
+        _lastMicroseconds = 0;
+        _currentTicks = 0;
+        _lastEventTicks = 0;
+    }
+
+    void StopRecording() {
+        mainView.fillScreen(RGB565_Black);
+        mainView.drawString("Ready",0,64);
+        writer.addEndofTrack(0,0);
+        writer.close();
+        _isRecording = false;
+    }
+
 private:
     View &mainView;
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
-    uint32_t _ticks;
-    bool _sdConnected = false, _hasError = false;
+    bool _sdConnected = false, _hasError = false, _isRecording = false;
     int _sdChipSelect, _lastErrorNumber = 0;
 };
 

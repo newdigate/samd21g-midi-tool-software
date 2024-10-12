@@ -14,7 +14,7 @@ if (BUILD_FOR_LINUX)
     set(BUILD_SHARED_LIBRARY ON)
     set(REDIRECT_SERIAL_OUT_TO_STD_OUT OFF)
 
-    DeclareAndFetch(teensy_x86_stubs            git@github.com:newdigate/teensy-x86-stubs.git feature/shared_serial src)
+    DeclareAndFetch(teensy_x86_stubs            git@github.com:newdigate/teensy-x86-stubs.git noinstall src)
     DeclareAndFetch(teensy_x86_sd_stubs         git@github.com:newdigate/teensy-x86-sd-stubs.git noinstall src)
     DeclareAndFetch(teensy_gfx                  git@github.com:newdigate/teensy-gfx.git noinstall src)
     DeclareAndFetch(teensy_x86_encoder_stubs    git@github.com:newdigate/teensy-x86-encoder-stubs.git noinstall src)
