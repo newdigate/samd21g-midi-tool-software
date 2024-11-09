@@ -29,8 +29,8 @@ public:
     virtual ~MainScene() {
     }
 
-    void Update () override {
-        mainMenu.Update();
+    void Update (unsigned milliseconds) override {
+        mainMenu.Update(milliseconds);
     }
 
     void InitScreen () override {

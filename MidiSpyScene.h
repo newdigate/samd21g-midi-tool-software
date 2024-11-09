@@ -8,25 +8,27 @@
 #include "rgb565_colors.h"
 #include "scenecontroller.h"
 #include <SD.h>
-
+#include "buttons.h"
 #include "smfwriter.h"
 
 class MidiSpyScene : public BaseScene {
 public:
-    MidiSpyScene(View &mainView, int sdChipSelect) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on, _bmp_settings_off, 16, 16),
-        mainView(mainView),
-        _microseconds(0),
-        _lastMicroseconds(0),
-        _sdChipSelect(sdChipSelect)
-    {
+    MidiSpyScene(View &mainView, int sdChipSelect) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on,
+                                                               _bmp_settings_off, 16, 16),
+                                                     mainView(mainView),
+                                                     _button_bar(mainView, 128, 16, 0, 0),
+                                                     _microseconds(0),
+                                                     _lastMicroseconds(0),
+                                                     _sdChipSelect(sdChipSelect) {
     }
 
     ~MidiSpyScene() override {
 
     }
 
-    void Update () override {
+    void Update (unsigned milliseconds) override {
         if (_sdConnected) {
+            _button_bar.Update(milliseconds);
             if (_isRecording) {
                 unsigned long currentMicros = micros();
                 if (_lastMicroseconds == 0)
@@ -69,6 +71,7 @@ public:
         _lastEventTicks = 0;
         _microsPerTick = get_microseconds_per_tick(120.0);
         _sdConnected = SD.begin(_sdChipSelect);
+        _button_bar.Init();
         if (!_sdConnected) {
             drawString("uSD card not connected", 1, 1);
         } else {
@@ -81,22 +84,38 @@ public:
     }
 
     void ButtonPressed(unsigned buttonIndex) override {
-        if (!_isRecording)
+        _button_bar.ButtonDown(buttonIndex);
+/*        if (!_isRecording)
             StartRecording();
         else
             StopRecording();
+            */
     }
     void Rotary1Changed(bool forward) override {
+        if (forward)
+            _button_bar.IncreaseSelectedIndex();
+        else
+            _button_bar.DecreaseSelectedIndex();
     }
-    void Rotary2Changed(bool forward) override {}
+    void Rotary2Changed(bool forward) override {
+        _button_bar.ValueScroll(forward);
+    }
     void NoteOn(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         auto deltaTicks = _currentTicks - _lastEventTicks;
         _lastEventTicks = _currentTicks;
+        Serial.print("ON pitch: ");
+        Serial.print(pitch);
+        Serial.print(" velocity: ");
+        Serial.println(velocity);
         writer.addNoteOnEvent(deltaTicks, channel, pitch, velocity);
     }
     void NoteOff(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         auto deltaTicks = _currentTicks - _lastEventTicks;
         _lastEventTicks = _currentTicks;
+        Serial.print("OFF pitch: ");
+        Serial.print(pitch);
+        Serial.print(" velocity: ");
+        Serial.println(velocity);
         writer.addNoteOffEvent(deltaTicks, channel, pitch);
     }
     void ControlChange(uint8_t channel, uint8_t data1, uint8_t data2) override {
@@ -118,6 +137,7 @@ public:
         mainView.drawString("Recording",0,64);
         writer.setFilename("test");
         writer.writeHeader();
+        writer.addSetTempo(0, 120.0);
         mainView.drawString(writer.getFilename(),0,74);
         _microseconds = micros();
         _lastMicroseconds = 0;
@@ -135,6 +155,7 @@ public:
 
 private:
     View &mainView;
+    TeensyMediaButtonBar _button_bar;
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;
