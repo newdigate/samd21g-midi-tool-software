@@ -11,15 +11,63 @@
 #include "buttons.h"
 #include "smfwriter.h"
 
+class MediaButtonBarMenuItem : public TeensyMenuItem {
+public:
+    explicit MediaButtonBarMenuItem(TeensyMenu &menu) :
+        TeensyMenuItem (menu, nullptr, 10, nullptr, nullptr, nullptr, nullptr),
+        _button_bar(*this, 128, 16, 0, 0)
+    {
+    }
+
+    ~MediaButtonBarMenuItem() override = default;
+
+    void Initialize() {
+        _button_bar.Init();
+    }
+    void Update(unsigned millis) override {
+        _button_bar.Update(millis);
+    }
+    void ButtonDown(unsigned char buttonNumber) override {
+        _button_bar.ButtonDown(buttonNumber);
+    }
+    void ValueScroll(bool forward) override {
+        _button_bar.ValueScroll(forward);
+    }
+    void IncreaseSelectedIndex() override {
+        _button_bar.IncreaseSelectedIndex();
+    }
+    void DecreaseSelectedIndex() override {
+        _button_bar.DecreaseSelectedIndex();
+    }
+    void ForceRedraw() override {
+        _button_bar.ForceRedraw();
+    }
+
+protected:
+    TeensyMediaButtonBar _button_bar;
+
+};
+
 class MidiSpyScene : public BaseScene {
 public:
+    const String _label = "hell0, 0 world";
     MidiSpyScene(View &mainView, int sdChipSelect) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on,
                                                                _bmp_settings_off, 16, 16),
                                                      mainView(mainView),
-                                                     _button_bar(mainView, 128, 16, 0, 0),
+                                                     //_button_bar(mainView, 128, 16, 0, 0),
+                                                    _menu(mainView, 128, 128, 0, 0, 0x092D /*Sapphire*/, 0),
+                                                    _mediaButtonBarMenuItem(new MediaButtonBarMenuItem(_menu )),
+                                                    sceneMenuItems {
+                                                        _mediaButtonBarMenuItem,
+                                                        new TeensyStringMenuItem(_menu, _label, nullptr) },
                                                      _microseconds(0),
                                                      _lastMicroseconds(0),
+                                                     _microsPerTick(0),
+                                                     _currentTicks(0),
+                                                     _lastEventTicks(0),
                                                      _sdChipSelect(sdChipSelect) {
+        _menu.AddControl(sceneMenuItems[0]);
+        _menu.AddControl(sceneMenuItems[1]);
     }
 
     ~MidiSpyScene() override {
@@ -28,7 +76,8 @@ public:
 
     void Update (unsigned milliseconds) override {
         if (_sdConnected) {
-            _button_bar.Update(milliseconds);
+            //_button_bar.Update(milliseconds);
+            _menu.Update(milliseconds);
             if (_isRecording) {
                 unsigned long currentMicros = micros();
                 if (_lastMicroseconds == 0)
@@ -71,7 +120,9 @@ public:
         _lastEventTicks = 0;
         _microsPerTick = get_microseconds_per_tick(120.0);
         _sdConnected = SD.begin(_sdChipSelect);
-        _button_bar.Init();
+        _mediaButtonBarMenuItem->Initialize();
+        ForceRedraw();
+        //_button_bar.Init();
         if (!_sdConnected) {
             drawString("uSD card not connected", 1, 1);
         } else {
@@ -84,7 +135,8 @@ public:
     }
 
     void ButtonPressed(unsigned buttonIndex) override {
-        _button_bar.ButtonDown(buttonIndex);
+        _menu.ButtonDown(buttonIndex);
+        //_button_bar.ButtonDown(buttonIndex);
 /*        if (!_isRecording)
             StartRecording();
         else
@@ -93,12 +145,12 @@ public:
     }
     void Rotary1Changed(bool forward) override {
         if (forward)
-            _button_bar.IncreaseSelectedIndex();
+            _menu.IncreaseSelectedIndex();
         else
-            _button_bar.DecreaseSelectedIndex();
+            _menu.DecreaseSelectedIndex();
     }
     void Rotary2Changed(bool forward) override {
-        _button_bar.ValueScroll(forward);
+       _menu.ValueScroll(forward);
     }
     void NoteOn(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         auto deltaTicks = _currentTicks - _lastEventTicks;
@@ -155,7 +207,9 @@ public:
 
 private:
     View &mainView;
-    TeensyMediaButtonBar _button_bar;
+    TeensyMenu _menu;
+    MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
+    TeensyMenuItem *sceneMenuItems[2];
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;

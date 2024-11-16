@@ -35,7 +35,7 @@ public:
 
     void InitScreen () override {
         mainView.fillScreen(RGB565_Blue);
-        mainMenu.NeedsUpdate = true;
+        mainMenu.ForceRedraw();
         mainView.setTextColor(RGB565_White);
         mainView.setTextWrap(true);
         mainView.drawString(sketchDescriptions[mainMenu.GetSelectedIndex()].c_str(),0,64);
