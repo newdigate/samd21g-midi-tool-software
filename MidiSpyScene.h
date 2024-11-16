@@ -14,7 +14,7 @@
 class MediaButtonBarMenuItem : public TeensyMenuItem {
 public:
     explicit MediaButtonBarMenuItem(TeensyMenu &menu) :
-        TeensyMenuItem (menu, nullptr, 10, nullptr, nullptr, nullptr, nullptr),
+        TeensyMenuItem (menu, nullptr, 16, nullptr, nullptr, nullptr, nullptr),
         _button_bar(*this, 128, 16, 0, 0)
     {
     }
@@ -24,21 +24,19 @@ public:
     void Initialize() {
         _button_bar.Init();
     }
-    void Update(unsigned millis) override {
+    void Update(const unsigned millis) override {
         _button_bar.Update(millis);
     }
-    void ButtonDown(unsigned char buttonNumber) override {
+    void ButtonDown(const unsigned char buttonNumber) override {
         _button_bar.ButtonDown(buttonNumber);
     }
-    void ValueScroll(bool forward) override {
+    void ValueScroll(const bool forward) override {
+        _button_bar.IndexScroll(forward);
+    }
+    void IndexScroll(const bool forward) override {
         _button_bar.ValueScroll(forward);
     }
-    void IncreaseSelectedIndex() override {
-        _button_bar.IncreaseSelectedIndex();
-    }
-    void DecreaseSelectedIndex() override {
-        _button_bar.DecreaseSelectedIndex();
-    }
+
     void ForceRedraw() override {
         _button_bar.ForceRedraw();
     }
@@ -122,7 +120,7 @@ public:
         _sdConnected = SD.begin(_sdChipSelect);
         _mediaButtonBarMenuItem->Initialize();
         ForceRedraw();
-        //_button_bar.Init();
+        _menu.ForceRedraw();
         if (!_sdConnected) {
             drawString("uSD card not connected", 1, 1);
         } else {
@@ -143,13 +141,10 @@ public:
             StopRecording();
             */
     }
-    void Rotary1Changed(bool forward) override {
-        if (forward)
-            _menu.IncreaseSelectedIndex();
-        else
-            _menu.DecreaseSelectedIndex();
+    void IndexScroll(const bool forward) override {
+        _menu.IndexScroll(forward);
     }
-    void Rotary2Changed(bool forward) override {
+    void ValueScroll(const bool forward) override {
        _menu.ValueScroll(forward);
     }
     void NoteOn(uint8_t channel, uint8_t pitch, uint8_t velocity) override {

@@ -45,15 +45,14 @@ public:
     void ButtonPressed(unsigned buttonIndex) override {
         mainMenu.ButtonDown(buttonIndex);
     }
-    void Rotary1Changed(bool forward) override {
-        if (forward) mainMenu.IncreaseSelectedIndex();
-        else mainMenu.DecreaseSelectedIndex();
+    void IndexScroll(bool forward) override {
+        mainMenu.IndexScroll(forward);
         mainView.setTextWrap(true);
         mainView.fillRect(0, 64, 128, 64, RGB565_Blue);
         mainView.setTextColor(RGB565_White);
         mainView.drawString(sketchDescriptions[mainMenu.GetSelectedIndex()], 0,64);
     }
-    void Rotary2Changed(bool forward) override {}
+    void ValueScroll(bool forward) override {}
 
     void AddSketch(const String &sketchName, const String &sketchDescription, unsigned int sceneNumber) {
         auto *sketchMenuItem = new TeensyStringMenuItem(mainMenu, sketchName,
