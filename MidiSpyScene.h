@@ -10,6 +10,7 @@
 #include <SD.h>
 #include "buttons.h"
 #include "smfwriter.h"
+#include "seven_segment.h"
 
 class MediaButtonBarMenuItem : public TeensyMenuItem {
 public:
@@ -46,6 +47,21 @@ protected:
 
 };
 
+class MediaTimeMenuItem : public TeensyMenuItem {
+public:
+    explicit MediaTimeMenuItem(TeensyMenu &menu) :
+        TeensyMenuItem (menu, nullptr, 12, nullptr, nullptr, nullptr, nullptr),
+        _timeIndicator(*this, 128, 10, 0, 0)
+    {
+        _children.push_back(&_timeIndicator);
+    }
+
+    ~MediaTimeMenuItem() override = default;
+
+private:
+    TeensyTimeIndicator _timeIndicator;
+};
+
 class MidiSpyScene : public BaseScene {
 public:
     const String _label = "hell0, 0 world";
@@ -53,11 +69,14 @@ public:
                                                                _bmp_settings_off, 16, 16),
                                                      mainView(mainView),
                                                      //_button_bar(mainView, 128, 16, 0, 0),
-                                                    _menu(mainView, 128, 128, 0, 0, 0x092D /*Sapphire*/, 0),
-                                                    _mediaButtonBarMenuItem(new MediaButtonBarMenuItem(_menu )),
-                                                    sceneMenuItems {
-                                                        _mediaButtonBarMenuItem,
-                                                        new TeensyStringMenuItem(_menu, _label, nullptr) },
+                                                     _menu(mainView, 128, 128, 0, 0, 0x092D /*Sapphire*/, 0),
+                                                     _mediaButtonBarMenuItem(new MediaButtonBarMenuItem(_menu)),
+                                                     _mediaTimeMenuItem(new MediaTimeMenuItem(_menu)),
+                                                     sceneMenuItems{
+                                                         _mediaButtonBarMenuItem,
+                                                         _mediaTimeMenuItem,
+                                                         new TeensyStringMenuItem(_menu, _label, nullptr)
+                                                     },
                                                      _microseconds(0),
                                                      _lastMicroseconds(0),
                                                      _microsPerTick(0),
@@ -66,6 +85,7 @@ public:
                                                      _sdChipSelect(sdChipSelect) {
         _menu.AddControl(sceneMenuItems[0]);
         _menu.AddControl(sceneMenuItems[1]);
+        _menu.AddControl(sceneMenuItems[2]);
     }
 
     ~MidiSpyScene() override {
@@ -204,7 +224,8 @@ private:
     View &mainView;
     TeensyMenu _menu;
     MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
-    TeensyMenuItem *sceneMenuItems[2];
+    MediaTimeMenuItem *_mediaTimeMenuItem;
+    TeensyMenuItem *sceneMenuItems[3];
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;
