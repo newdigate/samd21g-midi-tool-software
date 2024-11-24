@@ -86,7 +86,7 @@ const int chipSelect = SDCARD_SS_PIN;
 
 void setup() {
 
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     button.attach( 3, INPUT_PULLUP ); // USE EXTERNAL PULL-UP
     button2.attach( 16, INPUT_PULLUP ); // USE EXTERNAL PULL-UP
