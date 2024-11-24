@@ -67,17 +67,6 @@ const String menuLabels[numMenuItems] = {
     "Spy",
     "Sleep"};
 
-
-void sendMessage(byte channel, midi::MidiType type, byte data1, byte data2){
-    midi::Message<128U> m;
-    m.channel = channel;
-    m.type = type;
-    m.data1 = data1;
-    m.data2 = data2;
-    m.valid = true;
-    m.length = 3;
-    MIDI.send(m);
-}
 #ifdef BUILD_FOR_LINUX
 #define SDCARD_SS_PIN 0
 #endif
@@ -116,7 +105,7 @@ void setup() {
       tft.println("SD card not detected!!!");
       delay(2111);
     }
-
+    controller.Init();
     controller.AddScene(&mainMenu);
     controller.AddScene(&midiSpyScene);
     controller.SetCurrentSceneIndex(0);
@@ -134,12 +123,14 @@ void setup() {
 
     // Initiate MIDI communications, listen to all channels
     MIDI.begin(MIDI_CHANNEL_OMNI);
+
 }
 
 void loop() {
     controller.Process();
     MIDI.read();
 }
+
 #ifdef BUILD_FOR_LINUX
 int st7735_main(int, char**) {
     SD.setSDCardFolderPath("/Users/moolet/Development/github/samd21g-midi-tool-software/resources/sd");
