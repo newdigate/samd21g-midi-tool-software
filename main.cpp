@@ -25,7 +25,7 @@ using namespace Bounce2;
 Button button = Button();
 Button button2 = Button();
 Button button3 = Button();
-Encoder encoderLeftRight(7,10);
+Encoder encoderLeftRight(7,18);
 Encoder encoderUpDown(4, 15);
 #ifdef BUILD_FOR_LINUX
 #include "st7735_opengl.h"

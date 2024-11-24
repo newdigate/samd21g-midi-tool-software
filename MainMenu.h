@@ -4,7 +4,6 @@
 
 #ifndef MAINMENU_H
 #define MAINMENU_H
-#include <st7735_opengl_main.h>
 #include <sys/types.h>
 
 #include "rgb565_colors.h"

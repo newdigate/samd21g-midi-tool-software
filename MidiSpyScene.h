@@ -89,12 +89,19 @@ public:
     }
 
     ~MediaTimeMenuItem() override = default;
+
+    void Init() {
+        if (_initialized) return;
+        _timeIndicator.Init();
+        _initialized = true;
+    }
     void SetTime(const unsigned milliseconds) {
         _timeIndicator.SetTime( _media_position.GetMilliseconds());
     }
 private:
     MediaPosition &_media_position;
     TeensyTimeIndicator _timeIndicator;
+    bool _initialized = false;
 };
 
 class MidiSpyScene : public BaseScene {
@@ -178,6 +185,7 @@ public:
     }
 
     void InitScreen () override {
+        _mediaTimeMenuItem->Init();
         _microseconds = micros();
         _lastMicroseconds = 0;
         _currentTicks = 0;
