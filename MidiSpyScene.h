@@ -47,9 +47,7 @@ public:
 
     void Initialize() {
         _button_bar.Init();
-    }
-    void Update(const unsigned millis) override {
-        _button_bar.Update(millis);
+        _children.push_back(&_button_bar);
     }
     void ButtonDown(const unsigned char buttonNumber) override {
         _button_bar.ButtonDown(buttonNumber);
@@ -70,10 +68,6 @@ public:
         _button_bar.ValueScroll(forward);
     }
 
-    void ForceRedraw() override {
-        _button_bar.ForceRedraw();
-    }
-
 protected:
     TeensyMediaButtonBar _button_bar;
     std::function<void(MediaButtonType)> _buttonPressedCallback;
@@ -85,14 +79,15 @@ public:
     explicit MediaTimeMenuItem(TeensyMenu &menu, MediaPosition &position) : TeensyMenuItem(menu, nullptr, 12, nullptr, nullptr, nullptr,
                                                                   nullptr), _media_position(position),
                                                    _timeIndicator(*this, 128, 10, 0, 0) {
-        _children.push_back(&_timeIndicator);
+        
     }
 
     ~MediaTimeMenuItem() override = default;
 
     void Init() {
-        if (_initialized) return;
+        if (_initialized) return;        
         _timeIndicator.Init();
+        _children.push_back(&_timeIndicator);
         _initialized = true;
     }
     void SetTime(const unsigned milliseconds) {
