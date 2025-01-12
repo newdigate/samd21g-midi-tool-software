@@ -122,7 +122,10 @@ void setup() {
     // so it is called upon reception of a NoteOn.
 
     // Initiate MIDI communications, listen to all channels
-    MIDI.begin(MIDI_CHANNEL_OMNI);
+    //MIDI.begin(MIDI_CHANNEL_OMNI);
+    MIDI.turnThruOff();
+    MIDI.begin(1);
+
 
 }
 

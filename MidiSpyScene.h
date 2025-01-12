@@ -74,31 +74,6 @@ protected:
 
 };
 
-class MediaTimeMenuItem : public TeensyMenuItem {
-public:
-    explicit MediaTimeMenuItem(TeensyMenu &menu, MediaPosition &position) : TeensyMenuItem(menu, nullptr, 12, nullptr, nullptr, nullptr,
-                                                                  nullptr), _media_position(position),
-                                                   _timeIndicator(*this, 128, 10, 0, 0) {
-        
-    }
-
-    ~MediaTimeMenuItem() override = default;
-
-    void Init() {
-        if (_initialized) return;        
-        _timeIndicator.Init();
-        _children.push_back(&_timeIndicator);
-        _initialized = true;
-    }
-    void SetTime(const unsigned milliseconds) {
-        _timeIndicator.SetTime( _media_position.GetMilliseconds());
-    }
-private:
-    MediaPosition &_media_position;
-    TeensyTimeIndicator _timeIndicator;
-    bool _initialized = false;
-};
-
 class MidiSpyScene : public BaseScene {
 public:
     const String _label = "hell0, 0 world";
@@ -112,10 +87,10 @@ public:
                                                              MediaButtonPressed(buttonType);
                                                          })
                                                      ),
-                                                     _mediaTimeMenuItem(new MediaTimeMenuItem(_menu, _media_position)),
+                                                     _timeIndicator(new TeensyTimeIndicator(_menu, 128, 16, 0, 0)),
                                                      sceneMenuItems{
                                                          _mediaButtonBarMenuItem,
-                                                         _mediaTimeMenuItem,
+                                                         _timeIndicator,
                                                          new TeensyStringMenuItem(_menu, _label, nullptr)
                                                      },
                                                      _microseconds(0),
@@ -136,7 +111,6 @@ public:
     void Update (unsigned milliseconds) override {
         if (_sdConnected) {
             //_button_bar.Update(milliseconds);
-            _menu.Update(milliseconds);
             if (_isRecording) {
                 unsigned long currentMicros = micros();
                 if (_lastMicroseconds == 0) {
@@ -144,10 +118,12 @@ public:
                     _media_position.SetMilliseconds(0);
                 }
                 else if (currentMicros - _lastMicroseconds > _microsPerTick) {
-                    auto deltaTicks = currentMicros - _lastMicroseconds;
-                    _currentTicks += deltaTicks / _microsPerTick;
+                    auto deltaMicros = currentMicros - _lastMicroseconds;
+                    auto deltaTicks = deltaMicros / _microsPerTick;
+                    _currentTicks += deltaTicks;
                     _lastMicroseconds = currentMicros;
-                    _media_position.SetMilliseconds(_media_position.GetMilliseconds() + deltaTicks/1000);
+                    _media_position.SetMilliseconds(_media_position.GetMilliseconds() + deltaMicros/1000);
+                    _timeIndicator->SetTime(_media_position.GetMilliseconds());
                     //Serial.printf("ticks %d", _currentTicks);
                 }
 
@@ -175,12 +151,16 @@ public:
                 }
             }
         }
-        _mediaTimeMenuItem->SetTime(milliseconds);
-        TeensyControl::Update(milliseconds);
+
+        if (updateCount % 100 == 0) {
+          TeensyControl::Update(milliseconds);
+          _menu.Update(milliseconds);
+        }
+        updateCount++;
     }
 
     void InitScreen () override {
-        _mediaTimeMenuItem->Init();
+        _timeIndicator->Init();
         _microseconds = micros();
         _lastMicroseconds = 0;
         _currentTicks = 0;
@@ -220,10 +200,16 @@ public:
         if (_isRecording) {
             auto deltaTicks = _currentTicks - _lastEventTicks;
             _lastEventTicks = _currentTicks;
+/*
             Serial.print("ON pitch: ");
             Serial.print(pitch);
+            Serial.print(" channel: ");
+            Serial.print(channel);
             Serial.print(" velocity: ");
-            Serial.println(velocity);
+            Serial.print(velocity);
+            Serial.print(" delta: ");
+            Serial.println((unsigned long)deltaTicks);
+*/
             writer.addNoteOnEvent(deltaTicks, channel, pitch, velocity);
         }
     }
@@ -231,17 +217,34 @@ public:
         if (_isRecording) {
             auto deltaTicks = _currentTicks - _lastEventTicks;
             _lastEventTicks = _currentTicks;
+/*
             Serial.print("OFF pitch: ");
             Serial.print(pitch);
+            Serial.print(" channel: ");
+            Serial.print(channel);
             Serial.print(" velocity: ");
-            Serial.println(velocity);
+            Serial.print(velocity);
+            Serial.print(" delta: ");
+            Serial.println((unsigned long)deltaTicks);
+*/
             writer.addNoteOffEvent(deltaTicks, channel, pitch);
         }
     }
     void ControlChange(uint8_t channel, uint8_t data1, uint8_t data2) override {
+        return;
         if (_isRecording) {
             auto deltaTicks = _currentTicks - _lastEventTicks;
             _lastEventTicks = _currentTicks;
+            /*
+            Serial.print("CC data1: ");
+            Serial.print(data1);
+            Serial.print(" data2: ");
+            Serial.print(data2);
+            Serial.print(" channel: ");
+            Serial.print(channel);
+            Serial.print(" delta: ");
+            Serial.println((unsigned long)deltaTicks);
+            */
             writer.addControlChange(deltaTicks, data1, data2, channel);
         }
     }
@@ -259,7 +262,7 @@ public:
         mainView.drawString("Recording",0,64);
         writer.setFilename("test");
         writer.writeHeader();
-        writer.addSetTempo(0, 120.0);
+        //writer.addSetTempo(0, 120.0);
         mainView.drawString(writer.getFilename(),0,74);
         _microseconds = micros();
         _lastMicroseconds = 0;
@@ -289,17 +292,18 @@ public:
             };
         }
     }
+
 private:
     View &mainView;
     TeensyMenu _menu;
     MediaPosition _media_position;
     MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
-    MediaTimeMenuItem *_mediaTimeMenuItem;
-    TeensyMenuItem *sceneMenuItems[3];
+    TeensyTimeIndicator *_timeIndicator;
+    TeensyControl *sceneMenuItems[3];
     unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;
-    int _sdChipSelect, _lastErrorNumber = 0;
+    int _sdChipSelect, _lastErrorNumber = 0, updateCount = 0;
 };
 
 

@@ -31,10 +31,10 @@ if (BUILD_FOR_LINUX)
     DeclareAndFetch(midi-smf-writer             git@github.com:newdigate/midi-smf-writer.git noinstall src)
 
 endif()
-
 add_executable(MyExample main.cpp icons.cpp MainMenu.cpp
         MidiSpyScene.cpp
         MidiSpyScene.h)
+add_compile_options(-fno-rtti)
 target_link_libraries(MyExample teensy_x86_stubs teensy_gfx teensy_gfx_controls teensy_x86_bounce2_stubs teensy_st7735_linux_stubs teensy_x86_sd_stubs midi_smf_writer teensy_st7735_linux_opengl)
 if (BUILD_FOR_LINUX)
     target_link_libraries(MyExample ${teensy_st7735_linux_extras_opengl_LIBS})
