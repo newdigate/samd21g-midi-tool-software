@@ -94,10 +94,10 @@ public:
                                                          new TeensyStringMenuItem(_menu, _label, nullptr)
                                                      },
                                                      _microseconds(0),
-                                                     _lastMicroseconds(0),
+                                                     _startMicroseconds(0),
                                                      _microsPerTick(0),
                                                      _currentTicks(0),
-                                                     _lastEventTicks(0),
+                                                     _lastTick(0),
                                                      _sdChipSelect(sdChipSelect) {
         _menu.AddControl(sceneMenuItems[0]);
         _menu.AddControl(sceneMenuItems[1]);
@@ -113,16 +113,10 @@ public:
             //_button_bar.Update(milliseconds);
             if (_isRecording) {
                 unsigned long currentMicros = micros();
-                if (_lastMicroseconds == 0) {
-                    _lastMicroseconds = currentMicros;
-                    _media_position.SetMilliseconds(0);
+                if (_startMicroseconds == 0) {
                 }
-                else if (currentMicros - _lastMicroseconds > _microsPerTick) {
-                    auto deltaMicros = currentMicros - _lastMicroseconds;
-                    auto deltaTicks = deltaMicros / _microsPerTick;
-                    _currentTicks += deltaTicks;
-                    _lastMicroseconds = currentMicros;
-                    _media_position.SetMilliseconds(_media_position.GetMilliseconds() + deltaMicros/1000);
+                else {
+                    _media_position.SetMilliseconds((currentMicros - _startMicroseconds)/1000);
                     _timeIndicator->SetTime(_media_position.GetMilliseconds());
                     //Serial.printf("ticks %d", _currentTicks);
                 }
@@ -162,9 +156,9 @@ public:
     void InitScreen () override {
         _timeIndicator->Init();
         _microseconds = micros();
-        _lastMicroseconds = 0;
+        _startMicroseconds = 0;
         _currentTicks = 0;
-        _lastEventTicks = 0;
+        _lastTick = 0;
         _microsPerTick = get_microseconds_per_tick(120.0);
         _sdConnected = SD.begin(_sdChipSelect);
         _mediaButtonBarMenuItem->Initialize();
@@ -196,10 +190,32 @@ public:
     void ValueScroll(const bool forward) override {
        _menu.ValueScroll(forward);
     }
+
+    inline void StartTimerIfNecessary() {
+        if (_startMicroseconds == 0) {
+            _media_position.SetMilliseconds(0);
+            _startMicroseconds = micros();
+        }
+    }
+
+    unsigned get_delta_ticks(unsigned currentMicros, unsigned &ticks) {
+        const auto deltaMicros = currentMicros - _startMicroseconds;
+        ticks = deltaMicros / _microsPerTick;
+        return ticks - _lastTick;
+    }
+
+    unsigned update_ticks_and_return_delta() {
+        StartTimerIfNecessary();
+        const auto currentMicros = micros();
+        unsigned ticks;
+        const auto deltaTicks = get_delta_ticks(currentMicros, ticks);
+        _lastTick = ticks;
+        return deltaTicks;
+    }
+
     void NoteOn(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         if (_isRecording) {
-            auto deltaTicks = _currentTicks - _lastEventTicks;
-            _lastEventTicks = _currentTicks;
+            const auto deltaTicks = update_ticks_and_return_delta();
 /*
             Serial.print("ON pitch: ");
             Serial.print(pitch);
@@ -215,8 +231,7 @@ public:
     }
     void NoteOff(uint8_t channel, uint8_t pitch, uint8_t velocity) override {
         if (_isRecording) {
-            auto deltaTicks = _currentTicks - _lastEventTicks;
-            _lastEventTicks = _currentTicks;
+            const auto deltaTicks = update_ticks_and_return_delta();
 /*
             Serial.print("OFF pitch: ");
             Serial.print(pitch);
@@ -233,8 +248,8 @@ public:
     void ControlChange(uint8_t channel, uint8_t data1, uint8_t data2) override {
         return;
         if (_isRecording) {
-            auto deltaTicks = _currentTicks - _lastEventTicks;
-            _lastEventTicks = _currentTicks;
+            auto deltaTicks = _currentTicks - _lastTick;
+            _lastTick = _currentTicks;
             /*
             Serial.print("CC data1: ");
             Serial.print(data1);
@@ -265,9 +280,9 @@ public:
         //writer.addSetTempo(0, 120.0);
         mainView.drawString(writer.getFilename(),0,74);
         _microseconds = micros();
-        _lastMicroseconds = 0;
+        _startMicroseconds = 0;
         _currentTicks = 0;
-        _lastEventTicks = 0;
+        _lastTick = 0;
         _menu.ForceRedraw();
     }
 
@@ -300,7 +315,7 @@ private:
     MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
     TeensyTimeIndicator *_timeIndicator;
     TeensyControl *sceneMenuItems[3];
-    unsigned long long _microseconds, _lastMicroseconds, _microsPerTick, _currentTicks, _lastEventTicks;
+    unsigned long long _microseconds, _startMicroseconds, _microsPerTick, _currentTicks, _lastTick;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;
     int _sdChipSelect, _lastErrorNumber = 0, updateCount = 0;
