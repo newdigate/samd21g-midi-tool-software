@@ -93,7 +93,7 @@ public:
                                                          _timeIndicator,
                                                          new TeensyStringMenuItem(_menu, _label, nullptr)
                                                      },
-                                                     _microseconds(0),
+                                                     _lastUIUpdate(0),
                                                      _startMicroseconds(0),
                                                      _microsPerTick(0),
                                                      _currentTicks(0),
@@ -113,25 +113,32 @@ public:
             //_button_bar.Update(milliseconds);
             if (_isRecording) {
                 unsigned long currentMicros = micros();
-                if (_startMicroseconds == 0) {
-                }
-                else {
-                    _media_position.SetMilliseconds((currentMicros - _startMicroseconds)/1000);
-                    _timeIndicator->SetTime(_media_position.GetMilliseconds());
-                    //Serial.printf("ticks %d", _currentTicks);
-                }
 
-                _microseconds = currentMicros;
+                if (currentMicros - _lastUIUpdate > 100000 ) {
+                    _lastUIUpdate = currentMicros;
 
-                bool writerError = writer.isError();
-                int errorNumber = writerError ? writer.getErrorNumber() : 0;
-                if (writerError != _hasError || errorNumber != _lastErrorNumber) {
-                    _hasError = writerError;
-                    _lastErrorNumber = errorNumber;
-                    fillScreen(RGB565_Red);
-                    drawString("write error", 1, 1);
-                    drawNumber(_lastErrorNumber, 1, 11);
+                    if (_startMicroseconds != 0) {
+                        _media_position.SetMilliseconds((currentMicros - _startMicroseconds)/1000);
+                        _timeIndicator->SetTime(_media_position.GetMilliseconds());
+                    }
+
+                    TeensyControl::Update(milliseconds);
+                    _menu.Update(milliseconds);
+
+                    bool writerError = writer.isError();
+                    int errorNumber = writerError ? writer.getErrorNumber() : 0;
+                    if (writerError != _hasError || errorNumber != _lastErrorNumber) {
+                        _hasError = writerError;
+                        _lastErrorNumber = errorNumber;
+                        fillScreen(RGB565_Red);
+                        drawString("write error", 1, 1);
+                        drawNumber(_lastErrorNumber, 1, 11);
+                    }
                 }
+            } else
+            {
+                TeensyControl::Update(milliseconds);
+                _menu.Update(milliseconds);
             }
         } else {
             int sdConnected = SD.begin(_sdChipSelect);
@@ -145,17 +152,11 @@ public:
                 }
             }
         }
-
-        if (updateCount % 100 == 0) {
-          TeensyControl::Update(milliseconds);
-          _menu.Update(milliseconds);
-        }
-        updateCount++;
     }
 
     void InitScreen () override {
         _timeIndicator->Init();
-        _microseconds = micros();
+        _lastUIUpdate = micros();
         _startMicroseconds = 0;
         _currentTicks = 0;
         _lastTick = 0;
@@ -279,7 +280,7 @@ public:
         writer.writeHeader();
         //writer.addSetTempo(0, 120.0);
         mainView.drawString(writer.getFilename(),0,74);
-        _microseconds = micros();
+        _lastUIUpdate = micros();
         _startMicroseconds = 0;
         _currentTicks = 0;
         _lastTick = 0;
@@ -315,10 +316,10 @@ private:
     MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
     TeensyTimeIndicator *_timeIndicator;
     TeensyControl *sceneMenuItems[3];
-    unsigned long long _microseconds, _startMicroseconds, _microsPerTick, _currentTicks, _lastTick;
+    unsigned long long _lastUIUpdate, _startMicroseconds, _microsPerTick, _currentTicks, _lastTick;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, _isRecording = false;
-    int _sdChipSelect, _lastErrorNumber = 0, updateCount = 0;
+    int _sdChipSelect, _lastErrorNumber = 0;
 };
 
 
