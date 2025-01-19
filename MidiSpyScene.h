@@ -36,9 +36,9 @@ enum MediaButtonType {
 };
 class MediaButtonBarMenuItem : public TeensyMenuItem {
 public:
-    explicit MediaButtonBarMenuItem(TeensyMenu &menu, std::function<void(MediaButtonType)> buttonPressedCallback) :
+    explicit MediaButtonBarMenuItem(TeensyMenu &menu, std::function<void(MediaButtonType)> buttonPressedCallback, bool &isRecording) :
         TeensyMenuItem (menu, nullptr, 16, nullptr, nullptr, nullptr, nullptr),
-        _button_bar(*this, 128, 16, 0, 0),
+        _button_bar(*this, 128, 16, 0, 0, isRecording),
         _buttonPressedCallback(buttonPressedCallback)
     {
     }
@@ -76,7 +76,6 @@ protected:
 
 class MidiSpyScene : public BaseScene {
 public:
-    const String _label = "hell0, 0 world";
     MidiSpyScene(View &mainView, int sdChipSelect, bool &isRecording) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on,
                                                                _bmp_settings_off, 16, 16),
                                                      mainView(mainView),
@@ -85,23 +84,29 @@ public:
                                                      _mediaButtonBarMenuItem(
                                                          new MediaButtonBarMenuItem(_menu, [&] (MediaButtonType buttonType) {
                                                              MediaButtonPressed(buttonType);
-                                                         })
+                                                         }, isRecording)
                                                      ),
                                                      _timeIndicator(new TeensyTimeIndicator(_menu, 128, 16, 0, 0)),
-                                                     sceneMenuItems{
+                                                     _filenameMenuItem(new TeensyCharMenuItem(_menu, nullptr, [] (uint8_t buttonNumber) -> void {} )),
+                                                    _statusMenuItem(new TeensyCharMenuItem(_menu, nullptr, [] (uint8_t buttonNumber) -> void {} )),
+                                                     sceneMenuItems {
                                                          _mediaButtonBarMenuItem,
                                                          _timeIndicator,
-                                                         new TeensyStringMenuItem(_menu, _label, nullptr)
+                                                         _statusMenuItem,
+                                                         _filenameMenuItem
                                                      },
                                                      _lastUIUpdate(0),
                                                      _startMicroseconds(0),
                                                      _microsPerTick(0),
                                                      _currentTicks(0),
                                                      _lastTick(0),
-                                                     _sdChipSelect(sdChipSelect),_isRecording(isRecording) {
+                                                     _sdChipSelect(sdChipSelect),
+                                                     _isRecording(isRecording)
+                                                     {
         _menu.AddControl(sceneMenuItems[0]);
         _menu.AddControl(sceneMenuItems[1]);
         _menu.AddControl(sceneMenuItems[2]);
+        _menu.AddControl(sceneMenuItems[3]);
     }
 
     ~MidiSpyScene() override {
@@ -160,7 +165,6 @@ public:
         _startMicroseconds = 0;
         _currentTicks = 0;
         _lastTick = 0;
-        _microsPerTick = get_microseconds_per_tick(120.0);
         _sdConnected = SD.begin(_sdChipSelect);
         _mediaButtonBarMenuItem->Initialize();
         ForceRedraw();
@@ -201,7 +205,7 @@ public:
 
     unsigned get_delta_ticks(unsigned currentMicros, unsigned &ticks) {
         const auto deltaMicros = currentMicros - _startMicroseconds;
-        ticks = deltaMicros / _microsPerTick;
+        ticks = deltaMicros / writer.get_microseconds_per_tick(_tempo);
         return ticks - _lastTick;
     }
 
@@ -265,21 +269,13 @@ public:
         }
     }
 
-    unsigned int get_microseconds_per_tick(double beats_per_minute) {
-        double micros_per_beat = 60000000.0 / beats_per_minute;
-        unsigned int micros_per_tick = micros_per_beat / 480;
-        return micros_per_tick;
-    }
-
     void StartRecording() {
         _isRecording = true;
-        mainView.fillScreen(RGB565_Black);
-        mainView.setTextWrap(true);
-        mainView.drawString("Recording",0,64);
-        writer.setFilename("test");
+        writer.setFilename(_filename);
+        _filenameMenuItem->SetString(writer.getFilename());
+        _statusMenuItem->SetString("Recording");
         writer.writeHeader();
-        //writer.addSetTempo(0, 120.0);
-        mainView.drawString(writer.getFilename(),0,74);
+        writer.addSetTempo(0, _tempo);
         _lastUIUpdate = micros();
         _startMicroseconds = 0;
         _currentTicks = 0;
@@ -288,10 +284,9 @@ public:
     }
 
     void StopRecording() {
-        mainView.fillScreen(RGB565_Black);
-        mainView.drawString("Ready",0,64);
         writer.addEndofTrack(0,0);
         writer.close();
+        _statusMenuItem->SetString("Ready");
         _isRecording = false;
         _menu.ForceRedraw();
     }
@@ -315,12 +310,15 @@ private:
     MediaPosition _media_position;
     MediaButtonBarMenuItem *_mediaButtonBarMenuItem;
     TeensyTimeIndicator *_timeIndicator;
-    TeensyControl *sceneMenuItems[3];
+    TeensyCharMenuItem *_filenameMenuItem;
+    TeensyCharMenuItem *_statusMenuItem;
+    TeensyControl *sceneMenuItems[4];
     unsigned long long _lastUIUpdate, _startMicroseconds, _microsPerTick, _currentTicks, _lastTick;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, &_isRecording;
     int _sdChipSelect, _lastErrorNumber = 0;
-
+    double _tempo = 120.0;
+    char _filename[4] { 't','e','s','t' };
 };
 
 

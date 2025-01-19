@@ -111,7 +111,7 @@ void setup() {
     controller.Init();
     controller.AddScene(&mainMenu);
     controller.AddScene(&midiSpyScene);
-    controller.SetCurrentSceneIndex(0);
+    controller.SetCurrentSceneIndex(1);
     controller.SetActive(false);
 
     mainMenu.AddSketch(menuLabels[0], menuDescriptions[0], 1);
@@ -124,11 +124,11 @@ void setup() {
     // Connect the handleNoteOn function to the library,
     // so it is called upon reception of a NoteOn.
 
+    midiSpyScene.StartRecording();
+
     // Initiate MIDI communications, listen to all channels
     MIDI.begin(MIDI_CHANNEL_OMNI);
     MIDI.turnThruOff();
-
-
 }
 
 
