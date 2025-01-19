@@ -77,7 +77,7 @@ protected:
 class MidiSpyScene : public BaseScene {
 public:
     const String _label = "hell0, 0 world";
-    MidiSpyScene(View &mainView, int sdChipSelect) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on,
+    MidiSpyScene(View &mainView, int sdChipSelect, bool &isRecording) : BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on,
                                                                _bmp_settings_off, 16, 16),
                                                      mainView(mainView),
                                                      _media_position(),
@@ -98,7 +98,7 @@ public:
                                                      _microsPerTick(0),
                                                      _currentTicks(0),
                                                      _lastTick(0),
-                                                     _sdChipSelect(sdChipSelect) {
+                                                     _sdChipSelect(sdChipSelect),_isRecording(isRecording) {
         _menu.AddControl(sceneMenuItems[0]);
         _menu.AddControl(sceneMenuItems[1]);
         _menu.AddControl(sceneMenuItems[2]);
@@ -318,8 +318,9 @@ private:
     TeensyControl *sceneMenuItems[3];
     unsigned long long _lastUIUpdate, _startMicroseconds, _microsPerTick, _currentTicks, _lastTick;
     SmfWriter writer;
-    bool _sdConnected = false, _hasError = false, _isRecording = false;
+    bool _sdConnected = false, _hasError = false, &_isRecording;
     int _sdChipSelect, _lastErrorNumber = 0;
+
 };
 
 

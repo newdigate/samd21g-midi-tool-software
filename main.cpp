@@ -21,6 +21,9 @@ using TMidi = midi::MidiInterface<TMidiTransport>;
 MIDI_CREATE_DEFAULT_INSTANCE();
 #endif
 
+int loopCount = 0;
+bool isRecording = false;
+
 using namespace Bounce2;
 Button button = Button();
 Button button2 = Button();
@@ -45,7 +48,7 @@ VirtualView virtualView(mainView, 0, 0, 128, 128);
 SceneController<VirtualView,Encoder,Button, TMidiTransport> controller(virtualView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #endif
 
-MidiSpyScene midiSpyScene(mainView, SDCARD_SS_PIN);
+MidiSpyScene midiSpyScene(mainView, SDCARD_SS_PIN, isRecording);
 
 MainScene<TMidiTransport> mainMenu = MainScene<TMidiTransport>(mainView, controller);
 
@@ -122,16 +125,23 @@ void setup() {
     // so it is called upon reception of a NoteOn.
 
     // Initiate MIDI communications, listen to all channels
-    //MIDI.begin(MIDI_CHANNEL_OMNI);
+    MIDI.begin(MIDI_CHANNEL_OMNI);
     MIDI.turnThruOff();
-    MIDI.begin(1);
 
 
 }
 
+
 void loop() {
-    controller.Process();
-    MIDI.read();
+    while (MIDI.read()) ;
+    if (isRecording) {
+        loopCount += 1;
+        if (loopCount % 100 == 0) {
+            controller.Process();
+            loopCount = 0;
+        }
+    } else
+        controller.Process();
 }
 
 #ifdef BUILD_FOR_LINUX
