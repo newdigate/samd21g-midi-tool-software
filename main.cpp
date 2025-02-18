@@ -38,7 +38,7 @@ Encoder encoderUpDown(4, 15);
 #include "st7735_opengl_main.h"
 st7735_opengl<Encoder,Button> tft = st7735_opengl(false, 0, &encoderUpDown, &encoderLeftRight, &button, &button2, &button3);
 VirtualView mainView(tft, 0,0, 128, 128);
-chSceneHostControl<Encoder,Button, TMidiTransport> controller(mainView, 128, 128, 0, 0, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
+SceneHostControl<Encoder,Button, TMidiTransport> controller(mainView, 128, 128, 0, 0, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #else
 #include <Adafruit_ST7735.h>
 #include "st7735view.h"
