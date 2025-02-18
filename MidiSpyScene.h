@@ -97,8 +97,7 @@ public:
                                                          _filenameMenuItem
                                                      },
                                                      _lastUIUpdate(0),
-                                                    _deltaTimeSequencer(_tempo, _microsPerTick, true),
-                                                     _microsPerTick(_deltaTimeSequencer.getMicrosPerTick()),
+                                                     _deltaTimeSequencer(_tempo, 480, true),
                                                      _sdChipSelect(sdChipSelect),
                                                      _isRecording(isRecording)
                                                      {
@@ -121,10 +120,15 @@ public:
                 if (currentMicros - _lastUIUpdate > 100000 ) {
                     _lastUIUpdate = currentMicros;
 
-                    _media_position.SetMilliseconds( _deltaTimeSequencer.getMicroseconds(currentMicros));
+                    if(_deltaTimeSequencer.getInactivityMicros(currentMicros) > 10000000) {
+                        StopRecording();
+                        StartRecording();
+                    }
+
+                    _media_position.SetMilliseconds( _deltaTimeSequencer.getMicroseconds(currentMicros) / 1000);
                     _timeIndicator->SetTime(_media_position.GetMilliseconds());
 
-                    TeensyControl::Update(milliseconds);
+                    BaseScene::Update(milliseconds);
                     _menu.Update(milliseconds);
 
                     bool writerError = writer.isError();
@@ -156,10 +160,10 @@ public:
         }
     }
 
-    void InitScreen () override {
+    void Initialize () override {
         _timeIndicator->Init();
         _lastUIUpdate = micros();
-        _deltaTimeSequencer.stop();
+        _deltaTimeSequencer.start(_lastUIUpdate);
         _sdConnected = SD.begin(_sdChipSelect);
         _mediaButtonBarMenuItem->Initialize();
         ForceRedraw();
@@ -172,10 +176,10 @@ public:
             mainView.drawString("Ready", 0, 64);
         }
     }
-    void UninitScreen () override {
+    void Uninitialize () override {
     }
 
-    void ButtonPressed(unsigned buttonIndex) override {
+    void ButtonDown(uint8_t buttonIndex) override {
         _menu.ButtonDown(buttonIndex);
         //_button_bar.ButtonDown(buttonIndex);
 /*        if (!_isRecording)
@@ -274,6 +278,7 @@ public:
     }
 
 private:
+    double _tempo = 120.0;
     View &mainView;
     TeensyMenu _menu;
     MediaPosition _media_position;
@@ -282,12 +287,11 @@ private:
     TeensyCharMenuItem *_filenameMenuItem;
     TeensyCharMenuItem *_statusMenuItem;
     TeensyControl *sceneMenuItems[4];
-    unsigned long long _lastUIUpdate, _microsPerTick;
+    unsigned long long _lastUIUpdate;
     DeltaTimeSequencer _deltaTimeSequencer;
     SmfWriter writer;
     bool _sdConnected = false, _hasError = false, &_isRecording;
     int _sdChipSelect, _lastErrorNumber = 0;
-    double _tempo = 120.0;
     char _filename[4] { 't','e','s','t' };
 };
 

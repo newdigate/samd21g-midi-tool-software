@@ -10,13 +10,14 @@
 #include "scenecontroller.h"
 #include "teensy_controls.h"
 #include "icons.h"
+#include "Bounce2.h"
 
 #define numMenuItems 7
 
 template <typename TMidi>
 class MainScene : public BaseScene {
 public:
-    MainScene(View &mainView, SceneController<VirtualView, Encoder, Bounce2::Button, TMidi> &controller) :
+    MainScene(View &mainView, SceneHostControl<Encoder, Button, TMidi> &controller) :
         BaseScene(mainView, 128, 128, 0, 0, _bmp_settings_on, _bmp_settings_off, 16, 16),
         mainMenu(mainView, 128, 64, 0, 0, RGB565_Sapphire, RGB565_Black),
         mainView(mainView),
@@ -32,16 +33,16 @@ public:
         mainMenu.Update(milliseconds);
     }
 
-    void InitScreen () override {
+    void Initialize () override {
         mainView.fillScreen(RGB565_Blue);
         mainMenu.ForceRedraw();
         mainView.setTextColor(RGB565_White);
         mainView.setTextWrap(true);
         mainView.drawString(sketchDescriptions[mainMenu.GetSelectedIndex()].c_str(),0,64);
     }
-    void UninitScreen () override {}
+    void Uninitialize () override {}
 
-    void ButtonPressed(unsigned buttonIndex) override {
+    void ButtonDown(uint8_t buttonIndex) override {
         mainMenu.ButtonDown(buttonIndex);
     }
     void IndexScroll(bool forward) override {
@@ -75,7 +76,7 @@ private:
     std::vector<unsigned int> sketchSceneNumbers;
     std::vector<String> sketchDescriptions;
 
-    SceneController<VirtualView, Encoder, Bounce2::Button, TMidi> &_controller;
+    SceneHostControl<Encoder, Button, TMidi> &_controller;
 };
 
 #endif //MAINMENU_H

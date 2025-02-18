@@ -1,4 +1,5 @@
 cmake-build-debug
+cmake-build-teensy
 .idea
 # Prerequisites
 *.d

@@ -16,15 +16,18 @@ MIDI_CREATE_RTMIDI_INSTANCE(RtMidiMIDI, rtMIDI,  MIDI);
 using TMidiTransport = RtMidiTransport<RtMidiMIDI>;
 using TMidi = midi::MidiInterface<TMidiTransport>;
 #else
-using TMidiTransport = midi::SerialMIDI<arduino::HardwareSerial>;
+#define SDCARD_SS_PIN 22
+using TMidiTransport = midi::SerialMIDI<HardwareSerial>;
 using TMidi = midi::MidiInterface<TMidiTransport>;
 MIDI_CREATE_DEFAULT_INSTANCE();
 #endif
 
 int loopCount = 0;
 bool isRecording = false;
-
+#ifdef BUILD_FOR_LINUX
 using namespace Bounce2;
+#endif
+
 Button button = Button();
 Button button2 = Button();
 Button button3 = Button();
@@ -45,7 +48,7 @@ SceneController controller(mainView, encoderUpDown, encoderLeftRight, button, bu
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 ST7735 mainView(tft);
 VirtualView virtualView(mainView, 0, 0, 128, 128);
-SceneController<VirtualView,Encoder,Button, TMidiTransport> controller(virtualView, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
+SceneHostControl<Encoder,Button, TMidiTransport> controller(virtualView, 128, 128, 0, 0, encoderUpDown, encoderLeftRight, button, button2,button3, MIDI);
 #endif
 
 MidiSpyScene midiSpyScene(mainView, SDCARD_SS_PIN, isRecording);
@@ -69,10 +72,6 @@ const String menuLabels[numMenuItems] = {
     "Loop",
     "Spy",
     "Sleep"};
-
-#ifdef BUILD_FOR_LINUX
-#define SDCARD_SS_PIN 0
-#endif
 
 const int chipSelect = SDCARD_SS_PIN;
 
@@ -112,7 +111,7 @@ void setup() {
     controller.AddScene(&mainMenu);
     controller.AddScene(&midiSpyScene);
     controller.SetCurrentSceneIndex(1);
-    controller.SetActive(false);
+    controller.SetTopMenuActive(false);
 
     mainMenu.AddSketch(menuLabels[0], menuDescriptions[0], 1);
     mainMenu.AddSketch(menuLabels[1], menuDescriptions[1], 1);
@@ -137,11 +136,11 @@ void loop() {
     if (isRecording) {
         loopCount += 1;
         if (loopCount % 100 == 0) {
-            controller.Process();
+            controller.Update(millis());
             loopCount = 0;
         }
     } else
-        controller.Process();
+        controller.Update(millis());
 }
 
 #ifdef BUILD_FOR_LINUX
