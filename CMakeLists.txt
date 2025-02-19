@@ -21,11 +21,11 @@ if (BUILD_FOR_LINUX)
     DeclareAndFetch(teensy_gfx_controls         https://github.com/newdigate/teensy-gfx-controls.git main src)
     DeclareAndFetch(rgb565_colors               https://github.com/newdigate/rgb565_colors.git noinstall src)
     DeclareAndFetch(rtmidi                      https://github.com/thestk/rtmidi.git master "/")
-    DeclareAndFetch(teensy_x86_midi_stubs       https://github.com/newdigate/teensy-x86-midi-stubs.git noinstall "src extras/rtmidi/src")
-   #     DeclareAndFetchSubLibrary(teensy_x86_midi_stubs     )
+    DeclareAndFetch(teensy_x86_midi_stubs       https://github.com/newdigate/teensy-x86-midi-stubs.git main "src extras/rtmidi/src")
+    #    DeclareAndFetchSubLibrary(teensy_x86_midi_stubs extras/rtmidi/src)
 
     DeclareAndFetch(teensy_st7735_linux_stubs   https://github.com/newdigate/teensy-st7735-linux-stubs.git noinstall "src extras/opengl/src")
-
+    #    DeclareAndFetchSubLibrary(teensy_st7735_linux_stubs )
 
     DeclareAndFetch(midi-smf-writer             https://github.com/newdigate/midi-smf-writer.git noinstall src)
 
