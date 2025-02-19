@@ -1,5 +1,6 @@
 cmake-build-debug
 cmake-build-teensy
+.DS_Store
 .idea
 # Prerequisites
 *.d
