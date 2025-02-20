@@ -144,8 +144,14 @@ void loop() {
 }
 
 #ifdef BUILD_FOR_LINUX
+
+#define XSTR(x) STR(x)
+#define STR(x) #x
+
+#define samd21g_midi_tool_software_SOURCES_DIR_SD_DIRECTORY samd21g_midi_tool_software_SOURCES_DIR/resources/sd
+#define samd21g_midi_tool_software_SOURCES_DIR_SD_DIRECTORY_STRING XSTR(samd21g_midi_tool_software_SOURCES_DIR_SD_DIRECTORY)
 int st7735_main(int, char**) {
-    SD.setSDCardFolderPath("/Users/moolet/Development/github/samd21g-midi-tool-software/resources/sd");
+    SD.setSDCardFolderPath(samd21g_midi_tool_software_SOURCES_DIR_SD_DIRECTORY_STRING, true);
     return 0;
 }
 #endif

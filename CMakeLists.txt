@@ -12,7 +12,7 @@ if (BUILD_FOR_LINUX)
     include(cmake/cmake_declare_and_fetch.cmake.in)
     include(cmake/opengl.cmake.in)
     add_compile_definitions(-DBUILD_FOR_LINUX)
-
+    add_compile_definitions(samd21g_midi_tool_software_SOURCES_DIR=${CMAKE_CURRENT_SOURCE_DIR})
     DeclareAndFetch(teensy_x86_stubs            https://github.com/newdigate/teensy-x86-stubs.git main src)
     DeclareAndFetch(teensy_x86_sd_stubs         https://github.com/newdigate/teensy-x86-sd-stubs.git main src)
     DeclareAndFetch(teensy_gfx                  https://github.com/newdigate/teensy-gfx.git main src)
