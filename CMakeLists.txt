@@ -53,7 +53,7 @@ else ()
     include(${teensy_cmake_macros_SOURCE_DIR}/CMakeLists.include.txt)
 
     import_arduino_library(cores ${teensy_cores_SOURCE_DIR}/teensy4 avr util)
-
+    add_definitions(-DUSE_Adafruit_ST7735=On)
     import_arduino_library_git(SPI https://github.com/PaulStoffregen/SPI.git master "")
     import_arduino_library_git(SdFat https://github.com/PaulStoffregen/SdFat.git master "src" common DigitalIO ExFatLib FatLib FsLib iostream SdCard SpiDriver)
     import_arduino_library_git(SD https://github.com/PaulStoffregen/SD.git Juse_Use_SdFat src)
@@ -69,10 +69,10 @@ else ()
     import_arduino_library_git(TeensyGFXControls https://github.com/newdigate/teensy-gfx-controls.git main src)
     import_arduino_library_git(rgb565_colors https://github.com/newdigate/rgb565_colors.git noinstall src)
     import_arduino_library_git(MIDI https://github.com/PaulStoffregen/MIDI master src)
-    import_arduino_library_git(midi-smf-writer https://github.com/newdigate/midi-smf-writer noinstall src)
+    import_arduino_library_git(midi_smf_writer https://github.com/newdigate/midi-smf-writer noinstall src)
 
     teensy_add_executable(MyExample main.cpp icons.cpp MainMenu.cpp MidiSpyScene.cpp)
-    teensy_target_link_libraries(MyExample adafruit_st77xx adafruit_busio adafruit_gfx  Encoder Bounce2 SerialFlash Wire arm_math TeensyGFX TeensyGFXControls MIDI midi-smf-writer SD SdFat SPI cores)
+    teensy_target_link_libraries(MyExample adafruit_st77xx adafruit_busio adafruit_gfx  Encoder Bounce2 SerialFlash Wire arm_math TeensyGFX TeensyGFXControls MIDI midi_smf_writer SD SdFat SPI cores)
     target_link_libraries(MyExample.elf stdc++)
 endif()
 
