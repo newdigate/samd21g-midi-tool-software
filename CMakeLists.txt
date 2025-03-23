@@ -69,7 +69,7 @@ else ()
     import_arduino_library_git(TeensyGFXControls https://github.com/newdigate/teensy-gfx-controls.git main src)
     import_arduino_library_git(rgb565_colors https://github.com/newdigate/rgb565_colors.git noinstall src)
     import_arduino_library_git(MIDI https://github.com/PaulStoffregen/MIDI master src)
-    import_arduino_library_git(midi_smf_writer https://github.com/newdigate/midi-smf-writer noinstall src)
+    import_arduino_library_git(midi_smf_writer https://github.com/newdigate/midi-smf-writer main src)
 
     teensy_add_executable(MyExample main.cpp icons.cpp MainMenu.cpp MidiSpyScene.cpp)
     teensy_target_link_libraries(MyExample adafruit_st77xx adafruit_busio adafruit_gfx  Encoder Bounce2 SerialFlash Wire arm_math TeensyGFX TeensyGFXControls MIDI midi_smf_writer SD SdFat SPI cores)
